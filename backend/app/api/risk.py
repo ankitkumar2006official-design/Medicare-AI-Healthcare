@@ -129,4 +129,22 @@ async def get_patient_contextual_intelligence(
     )
     return analysis
 
+@router.get("/models/evaluation-metrics")
+async def get_ml_model_evaluation_metrics(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Returns quantitative evaluation benchmarks for the Scikit-learn Isolation Forest
+    anomaly detection engine and 24-48h Autoregressive physiological forecasting model.
+    """
+    from app.ml.model_evaluator import model_evaluator
+    if_metrics = model_evaluator.evaluate_isolation_forest(n_test_samples=400)
+    forecast_metrics = model_evaluator.evaluate_forecasting_error()
+    return {
+        "anomaly_detector": if_metrics,
+        "forecasting_engine": forecast_metrics,
+        "evaluated_at": datetime.utcnow().isoformat()
+    }
+
+
 

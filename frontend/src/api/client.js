@@ -64,6 +64,7 @@ export const riskAPI = {
   getLatest: (patientId) => api.get(`/api/risk/${patientId}`),
   getHistory: (patientId, limit = 30) => api.get(`/api/risk/${patientId}/history`, { params: { limit } }),
   explain: (patientId, userQuery, alertId) => api.post(`/api/risk/${patientId}/explain`, { user_query: userQuery, alert_id: alertId }),
+  getEvaluationMetrics: () => api.get('/api/risk/models/evaluation-metrics'),
 };
 
 export const alertAPI = {
