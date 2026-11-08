@@ -6,6 +6,7 @@ from app.database import get_collection
 from app.ml.risk_scorer import risk_engine
 from app.services.alert_service import alert_service
 from app.services.websocket_manager import ws_manager
+from app.services.sensor_validator import sensor_validator
 from app.models import DeviceStatus
 
 logger = logging.getLogger("mediguard.ingestion")
@@ -43,6 +44,16 @@ async def ingest_vital_reading(vital_packet: Dict[str, Any]) -> Dict[str, Any]:
         "signal_quality": vital_packet.get("signal_quality", 1.0),
         "timestamp": vital_packet.get("timestamp", datetime.utcnow())
     }
+
+    # Fetch previous reading to perform rate-of-change and motion artifact detection
+    prev_reading = await vitals_col.find_one({"patient_id": patient_id}, sort=[("timestamp", -1)])
+
+    # Validate and compute Signal Quality Index (SQI)
+    sanitized_doc, sqi, artifacts = sensor_validator.validate_and_compute_sqi(
+        current_vitals=reading_doc,
+        previous_vitals=prev_reading
+    )
+    reading_doc = sanitized_doc
 
     # If sensor is disconnected, update device status and notify
     if not reading_doc["sensor_connected"]:

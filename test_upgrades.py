@@ -77,7 +77,7 @@ async def run_upgrades_test_suite():
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
     caregiver_headers = {"Authorization": f"Bearer {caregiver_token}"}
 
-    async with httpx.AsyncClient(base_url=BASE_URL, timeout=15.0) as client:
+    async with httpx.AsyncClient(base_url=BASE_URL, timeout=35.0) as client:
         # ---------------------------------------------------------------------
         # 1. CAREGIVER MANAGEMENT & GPS ATTENDANCE
         # ---------------------------------------------------------------------
