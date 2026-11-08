@@ -25,6 +25,7 @@ COLLECTION_NAMES = [
     "medications",
     "audit_logs",
     "notifications",
+    "clinical_notes",
 ]
 
 
@@ -375,8 +376,9 @@ class DatabaseManager:
 
         if can_connect:
             try:
-                logger.info(f"Connecting to MongoDB URI: {uri}...")
-                client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=1000, connectTimeoutMS=1000)
+                timeout_ms = 1500 if ("localhost" in uri or "127.0.0.1" in uri) else 6000
+                logger.info(f"Connecting to MongoDB URI: {uri[:25]}... (timeout={timeout_ms}ms)")
+                client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=timeout_ms, connectTimeoutMS=timeout_ms)
                 await asyncio.to_thread(client.admin.command, "ping")
                 self.mongo_client = client
                 self.is_connected_to_mongo = True
@@ -388,7 +390,7 @@ class DatabaseManager:
                     name: MongoAsyncCollectionWrapper(raw_db[name])
                     for name in COLLECTION_NAMES
                 }
-                logger.info("Successfully connected to live MongoDB database!")
+                logger.info("Successfully connected to live MongoDB Atlas database!")
                 await self._init_indexes()
                 return
             except Exception as e:

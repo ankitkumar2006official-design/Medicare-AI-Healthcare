@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { patientAPI, analyticsAPI } from '../api/client';
 import { useWebSocket } from '../context/WebSocketContext';
 import AlertBadge from '../components/AlertBadge';
+import ECGLeadCanvas from '../components/ECGLeadCanvas';
 import {
   Activity,
   Heart,

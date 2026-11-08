@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.database import get_collection
 from app.auth import get_current_user, require_roles, verify_patient_access, log_audit_event
 from app.models import UserRole
-from app.models.patient import PatientCreate, PatientUpdate, PatientResponse
+from app.models.patient import PatientCreate, PatientUpdate, PatientResponse, ClinicalNoteCreate, ClinicalNote
 from app.services.digital_twin import digital_twin_service
 
 router = APIRouter(prefix="/api/patients", tags=["Patients"])
@@ -154,4 +154,53 @@ async def get_patient_twin(
         raise HTTPException(status_code=404, detail="Patient digital twin profile could not be assembled.")
 
     return twin
+
+@router.get("/{patient_id}/notes", response_model=List[ClinicalNote])
+async def get_patient_notes(
+    patient_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    authorized = await verify_patient_access(current_user, patient_id)
+    if not authorized:
+        raise HTTPException(status_code=403, detail="Unauthorized access to patient notes.")
+
+    notes_col = get_collection("clinical_notes")
+    docs = await notes_col.find({"patient_id": patient_id}).sort("timestamp", -1).to_list()
+    for d in docs:
+        d["id"] = str(d.get("_id", ""))
+    return [ClinicalNote(**d) for d in docs]
+
+@router.post("/{patient_id}/notes", response_model=ClinicalNote, status_code=status.HTTP_201_CREATED)
+async def add_patient_note(
+    patient_id: str,
+    note_in: ClinicalNoteCreate,
+    current_user: dict = Depends(require_roles([UserRole.ADMIN, UserRole.DOCTOR, UserRole.CAREGIVER]))
+):
+    authorized = await verify_patient_access(current_user, patient_id)
+    if not authorized:
+        raise HTTPException(status_code=403, detail="Unauthorized access to patient notes.")
+
+    notes_col = get_collection("clinical_notes")
+    doc = {
+        "_id": str(uuid.uuid4()),
+        "patient_id": patient_id,
+        "author_id": current_user["id"],
+        "author_name": current_user.get("full_name", "Clinician"),
+        "author_role": current_user.get("role", "doctor"),
+        "category": note_in.category,
+        "content": note_in.content,
+        "timestamp": datetime.utcnow()
+    }
+    await notes_col.insert_one(doc)
+    doc["id"] = doc["_id"]
+
+    await log_audit_event(
+        current_user["id"],
+        "clinical_note_added",
+        "clinical_notes",
+        doc["id"],
+        {"patient_id": patient_id, "category": note_in.category}
+    )
+
+    return ClinicalNote(**doc)
 

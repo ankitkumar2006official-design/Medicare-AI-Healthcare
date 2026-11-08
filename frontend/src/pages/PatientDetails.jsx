@@ -5,6 +5,7 @@ import { useWebSocket } from '../context/WebSocketContext';
 import VitalGauge from '../components/VitalGauge';
 import VitalChart from '../components/VitalChart';
 import AlertBadge from '../components/AlertBadge';
+import ECGLeadCanvas from '../components/ECGLeadCanvas';
 import {
   Activity,
   Heart,
@@ -19,14 +20,19 @@ import {
   Settings,
   Pill,
   Save,
-  CheckCircle2
+  CheckCircle2,
+  FileText,
+  Send,
+  Stethoscope
 } from 'lucide-react';
 
 export default function PatientDetails() {
   const { id } = useParams();
   const [twin, setTwin] = useState(null);
   const [vitalHistory, setVitalHistory] = useState([]);
-  const [activeTab, setActiveTab] = useState('telemetry');
+  const [notes, setNotes] = useState([]);
+  const [newNote, setNewNote] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
   const [editingBaseline, setEditingBaseline] = useState(false);
   const [baselineForm, setBaselineForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -34,17 +40,35 @@ export default function PatientDetails() {
 
   const loadData = async () => {
     try {
-      const [twinRes, vitalsRes] = await Promise.all([
+      const [twinRes, vitalsRes, notesRes] = await Promise.all([
         patientAPI.getDigitalTwin(id),
         vitalsAPI.getHistory(id, 40),
+        patientAPI.getNotes(id).catch(() => ({ data: [] })),
       ]);
       setTwin(twinRes.data);
       setBaselineForm(twinRes.data?.baseline_vitals || {});
       const rev = [...(vitalsRes.data || [])];
       rev.reverse();
       setVitalHistory(rev);
+      setNotes(notesRes.data || []);
     } catch (err) {
       console.warn('Digital twin error:', err);
+    }
+  };
+
+  const handleAddNote = async (e) => {
+    e.preventDefault();
+    if (!newNote.trim()) return;
+    setSavingNote(true);
+    try {
+      await patientAPI.addNote(id, { note: newNote });
+      setNewNote('');
+      const updatedNotes = await patientAPI.getNotes(id);
+      setNotes(updatedNotes.data || []);
+    } catch (err) {
+      console.warn('Note add error:', err);
+    } finally {
+      setSavingNote(false);
     }
   };
 
@@ -227,6 +251,26 @@ export default function PatientDetails() {
         </div>
       )}
 
+      {/* Live Continuous Physiological Waveform (Lead II / Pleth / Resp) */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Bedside Telemetry Waveform Oscilloscope (Lead II)
+            </h2>
+          </div>
+          <span className="text-[11px] font-mono text-slate-400">Sweeping Trace &bull; 60 FPS Normalized</span>
+        </div>
+        <ECGLeadCanvas
+          heartRate={currentVitals.heart_rate || 75}
+          spo2={currentVitals.oxygen_saturation || 98}
+          respRate={currentVitals.respiratory_rate || 16}
+          height={140}
+          patientId={id}
+        />
+      </div>
+
       {/* Live Vital Sign Telemetry Gauges */}
       <div>
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
@@ -335,6 +379,71 @@ export default function PatientDetails() {
             yDomain={[50, 190]}
           />
         </div>
+      </div>
+
+      {/* Clinical Notes & Clinician Documentation */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center space-x-2">
+            <Stethoscope className="w-4 h-4 text-hospital-teal" />
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              Physician & Caregiver Clinical Notes ({notes.length})
+            </h2>
+          </div>
+          <span className="text-xs text-slate-400">Authenticated Clinical Audit Trail</span>
+        </div>
+
+        {/* Existing Notes List */}
+        <div className="space-y-3">
+          {notes.length === 0 ? (
+            <p className="text-xs text-slate-400 italic py-2">
+              No clinical notes recorded yet for this patient. Add an observation below.
+            </p>
+          ) : (
+            notes.map((n, idx) => (
+              <div key={n.id || idx} className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-slate-800">{n.author_name || 'Attending Clinician'}</span>
+                    <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 font-semibold">
+                      {n.author_role || 'doctor'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {n.created_at ? new Date(n.created_at).toLocaleString() : 'Just now'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed">{n.note}</p>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Add Note Form */}
+        <form onSubmit={handleAddNote} className="pt-2 border-t border-slate-100 space-y-2">
+          <label className="block text-xs font-semibold text-slate-700">
+            Record New Clinical Observation / Order
+          </label>
+          <div className="flex items-center space-x-2">
+            <textarea
+              rows={2}
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              placeholder="Enter clinical assessment, bedside observation, treatment update, or escalation notes..."
+              className="w-full text-xs p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-hospital-teal focus:outline-none"
+            />
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={savingNote || !newNote.trim()}
+              className="bg-hospital-navy hover:bg-slate-800 text-white font-semibold px-4 py-2 rounded-xl text-xs flex items-center space-x-1.5 disabled:opacity-50 transition-colors shadow-sm"
+            >
+              <Send className="w-3.5 h-3.5 text-hospital-teal" />
+              <span>{savingNote ? 'Recording...' : 'Add Clinical Note'}</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

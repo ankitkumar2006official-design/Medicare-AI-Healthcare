@@ -49,6 +49,8 @@ export const patientAPI = {
   updatePatient: (id, data) => api.put(`/api/patients/${id}`, data),
   deletePatient: (id) => api.delete(`/api/patients/${id}`),
   getDigitalTwin: (id) => api.get(`/api/patients/${id}/twin`),
+  getNotes: (id) => api.get(`/api/patients/${id}/notes`),
+  addNote: (id, data) => api.post(`/api/patients/${id}/notes`, data),
 };
 
 export const vitalsAPI = {

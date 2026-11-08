@@ -1,6 +1,29 @@
 import os
 from pydantic import BaseModel
 
+def _load_env_files():
+    possible_paths = [
+        os.path.abspath(".env"),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env")),
+    ]
+    for p in possible_paths:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            k = k.strip()
+                            v = v.strip().strip('"').strip("'")
+                            if k not in os.environ:
+                                os.environ[k] = v
+            except Exception:
+                pass
+
+_load_env_files()
+
 class Settings(BaseModel):
     APP_NAME: str = "MediGuard AI – Operation Ward Zero"
     APP_VERSION: str = "1.0.0"
@@ -23,8 +46,8 @@ class Settings(BaseModel):
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     
-    # MongoDB
-    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017/mediguard_db")
+    # MongoDB Atlas
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb+srv://mediguard_admin:ankit181712@cluster0.kycrhvq.mongodb.net/")
     MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "mediguard_db")
     
     # AI / LLM
@@ -35,4 +58,3 @@ class Settings(BaseModel):
     SIMULATOR_AUTO_START: bool = os.getenv("SIMULATOR_AUTO_START", "true").lower() in ("true", "1", "yes")
 
 settings = Settings()
-
