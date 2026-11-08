@@ -6,7 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.database import get_collection
 from app.auth import get_current_user, require_roles, verify_patient_access, log_audit_event
 from app.models import UserRole
-from app.models.patient import PatientCreate, PatientUpdate, PatientResponse, ClinicalNoteCreate, ClinicalNote
+from app.models.patient import (
+    PatientCreate, PatientUpdate, PatientResponse, ClinicalNoteCreate, ClinicalNote,
+    PhysiologicalStabilityIndexResponse, CaregiverAssignmentRequest
+)
 from app.services.digital_twin import digital_twin_service
 
 router = APIRouter(prefix="/api/patients", tags=["Patients"])
@@ -204,4 +207,93 @@ async def add_patient_note(
     )
 
     return ClinicalNote(**doc)
+
+
+@router.get("/{patient_id}/stability-index", response_model=PhysiologicalStabilityIndexResponse)
+async def get_patient_stability_index(
+    patient_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    authorized = await verify_patient_access(current_user, patient_id)
+    if not authorized:
+        raise HTTPException(status_code=403, detail="Unauthorized access to patient stability metrics.")
+
+    patient_col = get_collection("patients")
+    vitals_col = get_collection("vital_readings")
+
+    patient = await patient_col.find_one({"patient_id": patient_id})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+
+    recent_vitals = await vitals_col.find({"patient_id": patient_id})\
+        .sort("timestamp", -1)\
+        .limit(20)\
+        .to_list()
+    recent_vitals.reverse()
+
+    latest_vital = recent_vitals[-1] if recent_vitals else None
+    baseline = patient.get("baseline_vitals", {})
+
+    stability = digital_twin_service.compute_stability_index(
+        patient_id=patient_id,
+        vitals=latest_vital,
+        baseline=baseline,
+        recent_vitals=recent_vitals
+    )
+    return PhysiologicalStabilityIndexResponse(**stability)
+
+
+@router.post("/{patient_id}/assign-caregiver")
+async def assign_caregiver_to_patient(
+    patient_id: str,
+    req: CaregiverAssignmentRequest,
+    current_user: dict = Depends(require_roles([UserRole.ADMIN, UserRole.DOCTOR, UserRole.CAREGIVER]))
+):
+    patient_col = get_collection("patients")
+    user_col = get_collection("users")
+
+    patient = await patient_col.find_one({"patient_id": patient_id})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+
+    caregiver = await user_col.find_one({"id": req.caregiver_id})
+    if not caregiver:
+        # Also check by email or name if ID wasn't found directly
+        caregiver = await user_col.find_one({"email": req.caregiver_id})
+
+    caregiver_name = req.caregiver_name or (caregiver.get("full_name") if caregiver else "Assigned Caregiver")
+
+    # Update patient record
+    await patient_col.update_one(
+        {"patient_id": patient_id},
+        {"$set": {
+            "assigned_caregiver_id": req.caregiver_id,
+            "assigned_caregiver_name": caregiver_name,
+            "updated_at": datetime.utcnow()
+        }}
+    )
+
+    # If caregiver document exists, append patient_id to assigned_patient_ids
+    if caregiver:
+        await user_col.update_one(
+            {"id": caregiver["id"]},
+            {"$addToSet": {"assigned_patient_ids": patient_id}}
+        )
+
+    await log_audit_event(
+        current_user["id"],
+        "caregiver_reassigned",
+        "patients",
+        patient_id,
+        {"caregiver_id": req.caregiver_id, "caregiver_name": caregiver_name, "reason": req.reason}
+    )
+
+    return {
+        "status": "success",
+        "message": f"Patient {patient_id} assigned to caregiver {caregiver_name} successfully.",
+        "patient_id": patient_id,
+        "caregiver_id": req.caregiver_id,
+        "caregiver_name": caregiver_name
+    }
+
 

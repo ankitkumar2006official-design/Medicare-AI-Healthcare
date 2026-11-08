@@ -40,6 +40,7 @@ Hospitals utilize continuous cardiopulmonary telemetry, intensive care early war
   |  - MongoDB Atlas Cloud Integration (Indexed collections with Resilient Store Fallback)  |
   |  - Duplicate Reading Prevention via Client Sequence IDs & Timestamp De-duplication     |
   |  - Patient Digital Twins: Personalized Baselines vs Population Norms                    |
+  |  - Physiological Stability Index (PSI): Real-time 0-100% Convergence & MAP Score       |
   +-------------------------------------------+---------------------------------------------+
                                               |
                                               v

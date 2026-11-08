@@ -76,3 +76,29 @@ class PatientResponse(PatientBase):
     latest_vitals: Optional[Dict[str, Any]] = None
     latest_risk: Optional[Dict[str, Any]] = None
     active_alerts_count: int = 0
+
+class BaselineComparisonDetail(BaseModel):
+    parameter: str
+    current_value: float
+    target_baseline_range: Dict[str, float]
+    population_norm_range: Dict[str, float]
+    deviation_percentage: float
+    status: str  # "optimal", "mild_deviation", "moderate_deviation", "critical_deviation"
+    clinical_note: str
+
+class PhysiologicalStabilityIndexResponse(BaseModel):
+    patient_id: str
+    stability_score: float  # 0.0 - 100.0
+    stability_category: str  # "Optimal Stability", "Mild Strain", "Moderate Instability", "Critical Decompensation"
+    trend_direction: str  # "improving", "stable", "deteriorating"
+    trend_delta: float
+    mean_arterial_pressure: Optional[float] = None
+    parameters: Dict[str, BaselineComparisonDetail]
+    contributing_factors: List[str]
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class CaregiverAssignmentRequest(BaseModel):
+    caregiver_id: str
+    caregiver_name: Optional[str] = None
+    reason: Optional[str] = "Routine shift allocation"
+

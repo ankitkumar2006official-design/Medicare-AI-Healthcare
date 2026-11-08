@@ -51,6 +51,8 @@ export const patientAPI = {
   getDigitalTwin: (id) => api.get(`/api/patients/${id}/twin`),
   getNotes: (id) => api.get(`/api/patients/${id}/notes`),
   addNote: (id, data) => api.post(`/api/patients/${id}/notes`, data),
+  getStabilityIndex: (id) => api.get(`/api/patients/${id}/stability-index`),
+  assignCaregiver: (id, data) => api.post(`/api/patients/${id}/assign-caregiver`, data),
 };
 
 export const vitalsAPI = {

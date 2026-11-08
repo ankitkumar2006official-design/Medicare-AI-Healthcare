@@ -78,6 +78,47 @@ Returns the **Patient Digital Twin** model including:
 - Baseline personalized vitals vs standard population norms.
 - Historical vital trends across 5 parameters.
 - Active prescriptions and recent clinician notes.
+- Real-time Physiological Stability Index (PSI) score, trend trajectory, and MAP.
+
+### `GET /api/patients/{id}/stability-index`
+Calculates a dynamic, clinically-weighted Physiological Stability Index (0.0 - 100.0%) comparing live biometric signals against patient-specific baselines and clinical reference norms.
+- **Response (`200 OK`)**:
+  ```json
+  {
+    "patient_id": "PT-1001",
+    "stability_score": 96.5,
+    "stability_category": "Optimal Stability",
+    "trend_direction": "stable",
+    "trend_delta": 0.0,
+    "mean_arterial_pressure": 93.3,
+    "parameters": {
+      "oxygen_saturation": {
+        "parameter": "Oxygen Saturation (SpO2)",
+        "current_value": 98.0,
+        "target_baseline_range": { "min": 95.0, "max": 100.0 },
+        "population_norm_range": { "min": 95.0, "max": 100.0 },
+        "deviation_percentage": 0.0,
+        "status": "optimal",
+        "clinical_note": "Oxygen saturation 98.0% satisfies target baseline (≥95%)."
+      }
+    },
+    "contributing_factors": [
+      "All vital signs within clinician target baseline boundaries."
+    ],
+    "timestamp": "2026-11-09T04:15:00Z"
+  }
+  ```
+
+### `POST /api/patients/{id}/assign-caregiver`
+Allows clinicians or administrators to dynamically assign or reallocate primary caregivers to a patient with an authenticated audit trail.
+- **Request Body**:
+  ```json
+  {
+    "caregiver_id": "user-caregiver-01",
+    "caregiver_name": "Nurse Kelly Davis, RN",
+    "reason": "Shift handover"
+  }
+  ```
 
 ### `POST /api/patients/{id}/notes`
 Adds a clinician observation or caregiver shift note to the patient's record.

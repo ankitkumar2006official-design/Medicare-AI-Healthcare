@@ -6,6 +6,7 @@ import VitalGauge from '../components/VitalGauge';
 import VitalChart from '../components/VitalChart';
 import AlertBadge from '../components/AlertBadge';
 import ECGLeadCanvas from '../components/ECGLeadCanvas';
+import PhysiologicalStabilityMatrix from '../components/PhysiologicalStabilityMatrix';
 import {
   Activity,
   Heart,
@@ -31,6 +32,8 @@ export default function PatientDetails() {
   const [twin, setTwin] = useState(null);
   const [vitalHistory, setVitalHistory] = useState([]);
   const [notes, setNotes] = useState([]);
+  const [stabilityData, setStabilityData] = useState(null);
+  const [caregiverName, setCaregiverName] = useState('');
   const [newNote, setNewNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [editingBaseline, setEditingBaseline] = useState(false);
@@ -40,13 +43,16 @@ export default function PatientDetails() {
 
   const loadData = async () => {
     try {
-      const [twinRes, vitalsRes, notesRes] = await Promise.all([
+      const [twinRes, vitalsRes, notesRes, stabilityRes] = await Promise.all([
         patientAPI.getDigitalTwin(id),
         vitalsAPI.getHistory(id, 40),
         patientAPI.getNotes(id).catch(() => ({ data: [] })),
+        patientAPI.getStabilityIndex(id).catch(() => null),
       ]);
       setTwin(twinRes.data);
       setBaselineForm(twinRes.data?.baseline_vitals || {});
+      setCaregiverName(twinRes.data?.assigned_caregiver_id || '');
+      setStabilityData(stabilityRes?.data || twinRes.data?.stability_index || null);
       const rev = [...(vitalsRes.data || [])];
       rev.reverse();
       setVitalHistory(rev);
@@ -329,6 +335,14 @@ export default function PatientDetails() {
           />
         </div>
       </div>
+
+      {/* Physiological Stability Index (PSI) & Comparative Baseline Matrix */}
+      <PhysiologicalStabilityMatrix
+        patientId={id}
+        stabilityData={stabilityData || twin.stability_index}
+        currentCaregiver={caregiverName}
+        onCaregiverUpdated={(name) => setCaregiverName(name)}
+      />
 
       {/* Historical Telemetry Recharts Curves */}
       <div>
