@@ -17,12 +17,24 @@ export const WebSocketProvider = ({ children }) => {
   const reconnectTimeoutRef = useRef(null);
 
   const connect = useCallback(() => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    // If in dev proxy, default to ws://localhost:8000/ws if needed
-    const wsUrl = import.meta.env.VITE_WS_URL || `${protocol}//${host}/ws${token ? `?token=${token}` : ''}`;
+    const hostname = window.location.hostname || 'localhost';
+
+    // In local dev, connect directly to FastAPI backend on port 8000
+    let baseWsUrl = import.meta.env.VITE_WS_URL;
+    if (!baseWsUrl) {
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        baseWsUrl = `ws://${hostname}:8000/ws`;
+      } else {
+        baseWsUrl = `${protocol}//${window.location.host}/ws`;
+      }
+    }
+
+    const wsUrl = `${baseWsUrl}${token ? (baseWsUrl.includes('?') ? `&token=${token}` : `?token=${token}`) : ''}`;
 
     try {
       const socket = new WebSocket(wsUrl);

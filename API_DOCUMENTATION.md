@@ -289,3 +289,4 @@ Bidirectional low-latency streaming channel.
   - `alert_created`: Emitted immediately upon safety rule or ML anomaly detection.
   - `alert_acknowledged`: Broadcasts caregiver response status.
   - `alert_escalated`: Broadcasts physician escalation notice.
+

@@ -25,3 +25,4 @@ services:
         generateValue: true
       - key: CORS_ORIGINS
         value: "http://localhost:5173,https://*.vercel.app"
+

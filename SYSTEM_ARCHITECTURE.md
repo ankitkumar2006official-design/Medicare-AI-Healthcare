@@ -174,3 +174,4 @@ When home Wi-Fi or cellular connectivity degrades:
 3. **De-duplication Check**: Backend checks incoming sequence IDs against indexed storage; duplicate packets are discarded without throwing errors.
 4. **Delayed Data Flagging**: Packets recorded > 300 seconds prior to arrival are ingested with a `delayed: true` flag to prevent historical readings from falsely skewing real-time alarm thresholds.
 5. **Watchdog Verification**: Central telemetry monitors the last transmission heartbeat; if no packets arrive for > 15 seconds, a `StaleSensorAlert` is triggered.
+
