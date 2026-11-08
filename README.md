@@ -36,7 +36,7 @@ Hospitals utilize continuous cardiopulmonary telemetry, intensive care early war
   |  • Layer 1: Deterministic Clinical Rules (Hypoxia, Tachycardia, Shock)  |
   |  • Layer 2: Scikit-learn Isolation Forest (Unsupervised Anomaly Metric) |
   |  • Layer 3: Composite Physiological Risk Scorer (0 - 100)               |
-  |  • Optional Layer 4: Google Gemini Natural-Language Telemetry Analysis  |
+  |  • Layer 4: Groq Ultra-Fast AI (GPT-OSS-120B / LLaMA-3) & Gemini Clinical Explanations |
   +------------------------------------+------------------------------------+
                                        |
                                        v
