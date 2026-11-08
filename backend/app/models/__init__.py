@@ -33,3 +33,4 @@ class DeviceStatus(str, Enum):
     OFFLINE = "offline"
     ERROR = "error"
     DEGRADED = "degraded"
+

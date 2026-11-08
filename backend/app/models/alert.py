@@ -42,3 +42,4 @@ class AlertResolveRequest(BaseModel):
 
 class AlertResponse(AlertBase):
     id: str
+

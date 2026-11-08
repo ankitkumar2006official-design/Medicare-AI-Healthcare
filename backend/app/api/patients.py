@@ -154,3 +154,4 @@ async def get_patient_twin(
         raise HTTPException(status_code=404, detail="Patient digital twin profile could not be assembled.")
 
     return twin
+

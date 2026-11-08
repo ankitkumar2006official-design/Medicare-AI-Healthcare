@@ -74,3 +74,4 @@ def test_layer3_risk_assessment_safety_invariant():
     assert result["risk_category"] == RiskCategory.CRITICAL.value
     assert result["risk_score"] >= 90.0
     assert len(result["detected_abnormalities"]) > 0
+

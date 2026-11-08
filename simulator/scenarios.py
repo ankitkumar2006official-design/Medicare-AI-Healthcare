@@ -120,3 +120,4 @@ SCENARIOS: Dict[str, ScenarioDefinition] = {
         missing_data_prob=1.0
     )
 }
+

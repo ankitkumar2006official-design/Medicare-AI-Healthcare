@@ -201,3 +201,4 @@ export default function AdminDashboard({ onOpenSimulator }) {
     </div>
   );
 }
+

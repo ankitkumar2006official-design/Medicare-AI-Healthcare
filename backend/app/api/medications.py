@@ -61,3 +61,4 @@ async def record_medication_administration(
 
     await log_audit_event(current_user["id"], "medication_administered", "medications", med_id)
     return MedicationResponse(**updated)
+

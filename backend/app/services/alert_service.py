@@ -195,3 +195,4 @@ class AlertService:
 
 
 alert_service = AlertService()
+

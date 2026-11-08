@@ -24,3 +24,4 @@ class MedicationResponse(MedicationBase):
     updated_at: datetime
     last_administered_at: Optional[datetime] = None
     last_administered_by: Optional[str] = None
+

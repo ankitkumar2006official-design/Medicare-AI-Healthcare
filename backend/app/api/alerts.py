@@ -108,3 +108,4 @@ async def resolve_alert(
 
     await log_audit_event(current_user["id"], "alert_resolved", "alerts", alert_id, {"resolution": req.resolution_note})
     return AlertResponse(**updated)
+

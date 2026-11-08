@@ -21,3 +21,4 @@ class VitalReadingCreate(VitalReadingBase):
 
 class VitalReadingResponse(VitalReadingBase):
     id: str
+

@@ -124,3 +124,4 @@ async def update_interval(
         raise HTTPException(status_code=400, detail="Interval must be between 1.0 and 10.0 seconds.")
     sensor_engine.interval_seconds = req.interval_seconds
     return {"message": f"Sampling interval set to {req.interval_seconds} seconds."}
+

@@ -23,3 +23,4 @@ class RiskAssessmentBase(BaseModel):
 
 class RiskAssessmentResponse(RiskAssessmentBase):
     id: str
+

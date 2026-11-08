@@ -358,3 +358,4 @@ export default function SimulatorDrawer({ isOpen, onClose, patients = [] }) {
     </div>
   );
 }
+

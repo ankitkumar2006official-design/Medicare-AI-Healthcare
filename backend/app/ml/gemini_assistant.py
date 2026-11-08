@@ -175,3 +175,4 @@ Keep response to 3 clear paragraphs with bullet points for recommended caregiver
 
 
 gemini_assistant = GeminiHealthAssistant()
+

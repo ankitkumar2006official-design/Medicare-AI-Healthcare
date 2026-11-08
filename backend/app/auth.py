@@ -132,3 +132,4 @@ async def log_audit_event(
         await get_collection("audit_logs").insert_one(log_entry)
     except Exception as e:
         logger.warning(f"Failed to record audit log: {e}")
+

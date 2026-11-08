@@ -59,3 +59,4 @@ async def get_latest_vital(
 
     reading["id"] = str(reading.get("_id", ""))
     return VitalReadingResponse(**reading)
+

@@ -35,3 +35,4 @@ class Settings(BaseModel):
     SIMULATOR_AUTO_START: bool = os.getenv("SIMULATOR_AUTO_START", "true").lower() in ("true", "1", "yes")
 
 settings = Settings()
+

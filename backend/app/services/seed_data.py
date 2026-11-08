@@ -353,3 +353,4 @@ async def seed_initial_data():
             await med_col.insert_one(m_doc)
 
     logger.info("Demo dataset verification and seeding complete.")
+

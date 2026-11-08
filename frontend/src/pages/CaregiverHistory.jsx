@@ -134,3 +134,4 @@ export default function CaregiverHistory() {
     </div>
   );
 }
+

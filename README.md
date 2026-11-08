@@ -197,3 +197,4 @@ python -u backend/test_runner.py
 ## 10. Safety & Compliance Notice
 
 > **CLINICAL NOTICE**: MediGuard AI is a prototype designed for software engineering demonstration and clinical workflow simulation for the Operation Ward Zero hackathon. Machine learning risk scores and synthetic telemetry do not substitute for certified clinical judgment, medical diagnosis, or licensed emergency protocols. In real clinical distress, follow standard hospital escalation protocols immediately.
+

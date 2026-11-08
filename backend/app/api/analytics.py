@@ -97,3 +97,4 @@ async def get_patient_analytics(
         "risk_trend": risks,
         "recent_alerts": alerts
     }
+

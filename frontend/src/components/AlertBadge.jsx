@@ -28,3 +28,4 @@ export default function AlertBadge({ severity, category, status }) {
     </span>
   );
 }
+

@@ -67,3 +67,4 @@ async def update_device_status(
     )
 
     return DeviceResponse(**updated)
+

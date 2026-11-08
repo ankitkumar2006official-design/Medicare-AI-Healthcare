@@ -187,3 +187,4 @@ export default function LandingPage({ onOpenSimulator }) {
     </div>
   );
 }
+

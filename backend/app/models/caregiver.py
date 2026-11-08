@@ -26,3 +26,4 @@ class CaregiverResponseModel(CaregiverResponseCreate):
     caregiver_id: str
     caregiver_name: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+

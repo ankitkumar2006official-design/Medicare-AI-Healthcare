@@ -141,3 +141,4 @@ async def update_user(
 
     await log_audit_event(current_user["id"], "user_updated", "users", user_id, patch)
     return UserResponse(**updated)
+

@@ -60,3 +60,4 @@ class PatientResponse(PatientBase):
     latest_vitals: Optional[Dict[str, Any]] = None
     latest_risk: Optional[Dict[str, Any]] = None
     active_alerts_count: int = 0
+

@@ -113,3 +113,4 @@ async def ingest_vital_reading(vital_packet: Dict[str, Any]) -> Dict[str, Any]:
         "risk_score": risk_assessment["risk_score"],
         "alerts_generated": len(generated_alerts)
     }
+

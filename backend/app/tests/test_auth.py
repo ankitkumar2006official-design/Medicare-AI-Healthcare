@@ -16,3 +16,4 @@ def test_jwt_generation_and_decoding():
     assert decoded["sub"] == "user-test-01"
     assert decoded["role"] == "doctor"
     assert decoded["email"] == "doctor@mediguard.ai"
+
