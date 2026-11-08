@@ -8,8 +8,10 @@ from app.auth import get_current_user, verify_patient_access
 from app.models.risk import RiskAssessmentResponse
 from app.ml.risk_scorer import risk_engine
 from app.ml.groq_assistant import groq_assistant
+from app.services.contextual_intelligence import ContextualIntelligenceEngine
 
 router = APIRouter(prefix="/api/risk", tags=["AI Risk Engine"])
+contextual_engine = ContextualIntelligenceEngine()
 
 class AnalyzeRiskRequest(BaseModel):
     patient_id: str
@@ -108,4 +110,23 @@ async def explain_patient_risk(
     )
 
     return explanation_res
+
+@router.get("/{patient_id}/contextual-intelligence")
+async def get_patient_contextual_intelligence(
+    patient_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    authorized = await verify_patient_access(current_user, patient_id)
+    if not authorized:
+        raise HTTPException(status_code=403, detail="Unauthorized access to patient context.")
+
+    vitals_col = get_collection("vital_readings")
+    latest_vital = await vitals_col.find_one({"patient_id": patient_id}, sort=[("timestamp", -1)]) or {}
+
+    analysis = await contextual_engine.analyze_patient_context(
+        patient_id=patient_id,
+        current_vitals=latest_vital
+    )
+    return analysis
+
 

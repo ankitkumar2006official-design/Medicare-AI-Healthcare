@@ -73,6 +73,10 @@ import MedicationManagement from './pages/MedicationManagement';
 import DeviceManagement from './pages/DeviceManagement';
 import ReportsAnalytics from './pages/ReportsAnalytics';
 import UserSettings from './pages/UserSettings';
+import CaregiverAttendance from './pages/CaregiverAttendance';
+import CaregiverPerformance from './pages/CaregiverPerformance';
+import SystemReliability from './pages/SystemReliability';
+import PredictiveAnalytics from './pages/PredictiveAnalytics';
 
 function AppLayout({ children, onOpenSimulator }) {
   const location = useLocation();
@@ -221,6 +225,40 @@ function MainRoutes({ onOpenSimulator }) {
         element={
           <ProtectedRoute>
             <UserSettings />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Operation Ward Zero Advanced Capabilities */}
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute>
+            <CaregiverAttendance />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/caregiver-performance"
+        element={
+          <ProtectedRoute>
+            <CaregiverPerformance />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reliability"
+        element={
+          <ProtectedRoute>
+            <SystemReliability />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/forecasts"
+        element={
+          <ProtectedRoute>
+            <PredictiveAnalytics />
           </ProtectedRoute>
         }
       />

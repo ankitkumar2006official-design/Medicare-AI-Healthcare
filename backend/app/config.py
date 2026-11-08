@@ -47,7 +47,7 @@ class Settings(BaseModel):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     
     # MongoDB Atlas
-    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb+srv://mediguard_admin:ankit181712@cluster0.kycrhvq.mongodb.net/")
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "")
     MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "mediguard_db")
     
     # AI / LLM (Groq API)

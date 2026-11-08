@@ -72,6 +72,33 @@ export const alertAPI = {
   acknowledge: (id, note) => api.post(`/api/alerts/${id}/acknowledge`, { note }),
   escalate: (id, urgentReason, doctorId) => api.post(`/api/alerts/${id}/escalate`, { urgent_reason: urgentReason, doctor_id: doctorId }),
   resolve: (id, resolutionNote) => api.post(`/api/alerts/${id}/resolve`, { resolution_note: resolutionNote }),
+  checkEscalations: () => api.post('/api/alerts/check-escalations'),
+  getAuditTrail: (id) => api.get(`/api/alerts/${id}/audit-trail`),
+};
+
+export const caregiverAttendanceAPI = {
+  checkIn: (data) => api.post('/api/caregivers/attendance/check-in', data),
+  checkOut: (data) => api.post('/api/caregivers/attendance/check-out', data),
+  getHistory: (params) => api.get('/api/caregivers/attendance/history', { params }),
+  logActivity: (data) => api.post('/api/caregivers/activity', data),
+  getActivities: (params) => api.get('/api/caregivers/activity', { params }),
+  getPerformance: (caregiverId) => api.get('/api/caregivers/analytics/performance', { params: { caregiver_id: caregiverId } }),
+  getActiveRoster: () => api.get('/api/caregivers/roster'),
+};
+
+export const reliabilityAPI = {
+  syncBuffer: (data) => api.post('/api/reliability/sync-buffer', data),
+  getStaleSensors: (maxSilentSeconds) => api.get('/api/reliability/stale-sensors', { params: { max_silent_seconds: maxSilentSeconds } }),
+  getHealthSnapshot: () => api.get('/api/reliability/health-snapshot'),
+  getSyncLogs: (limit = 30) => api.get('/api/reliability/sync-logs', { params: { limit } }),
+};
+
+export const forecastAPI = {
+  getForecast: (patientId) => api.get(`/api/forecasts/${patientId}`),
+};
+
+export const contextualAPI = {
+  getContext: (patientId) => api.get(`/api/risk/${patientId}/contextual-intelligence`),
 };
 
 export const caregiverAPI = {
@@ -95,6 +122,9 @@ export const simulatorAPI = {
   setOverride: (patientId, vitals) => api.post('/api/simulator/override', { patient_id: patientId, vitals }),
   clearOverride: (patientId) => api.post('/api/simulator/override/clear', null, { params: { patient_id: patientId } }),
   setInterval: (seconds) => api.post('/api/simulator/interval', { interval_seconds: seconds }),
+  simulateOffline: (patientId, offline = true) => api.post('/api/simulator/buffer/simulate-offline', { patient_id: patientId, offline }),
+  getBufferStatus: () => api.get('/api/simulator/buffer/status'),
+  reconnectAndSync: (patientId) => api.post(`/api/simulator/buffer/reconnect-and-sync?patient_id=${patientId}`),
 };
 
 export const medicationAPI = {

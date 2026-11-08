@@ -26,6 +26,14 @@ COLLECTION_NAMES = [
     "audit_logs",
     "notifications",
     "clinical_notes",
+    # Operation Ward Zero upgraded collections
+    "caregiver_attendance",
+    "caregiver_activity",
+    "caregiver_notes",
+    "sensor_buffer",
+    "synchronization_logs",
+    "system_health_logs",
+    "forecasts",
 ]
 
 
@@ -423,6 +431,15 @@ class DatabaseManager:
             await self.db["caregiver_responses"].create_index("alert_id")
             # Audit logs: timestamp desc
             await self.db["audit_logs"].create_index([("timestamp", -1)])
+            # Caregiver attendance & activity
+            await self.db["caregiver_attendance"].create_index([("caregiver_id", 1), ("check_in_time", -1)])
+            await self.db["caregiver_activity"].create_index([("caregiver_id", 1), ("timestamp", -1)])
+            # Reliability & sensor buffer
+            await self.db["sensor_buffer"].create_index([("patient_id", 1), ("client_sequence_id", 1)])
+            await self.db["synchronization_logs"].create_index([("timestamp", -1)])
+            await self.db["system_health_logs"].create_index([("timestamp", -1)])
+            # Forecasts: patient_id and generated_at desc
+            await self.db["forecasts"].create_index([("patient_id", 1), ("generated_at", -1)])
         except Exception as e:
             logger.warning(f"Index creation note: {e}")
 

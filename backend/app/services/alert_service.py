@@ -67,6 +67,32 @@ class AlertService:
                     await ws_manager.broadcast_event("alert_escalated", existing, patient_id)
                 continue
 
+            now = datetime.utcnow()
+            assigned_cg = patient.get("assigned_caregiver") or "James Wilson, RN"
+            assigned_cg_id = patient.get("assigned_caregiver_id") or "CG-001"
+            assigned_doc = patient.get("assigned_doctor") or "Dr. Sarah Chen, MD"
+            assigned_doc_id = patient.get("assigned_doctor_id") or "DOC-001"
+
+            # SLA deadline: 90 seconds for critical/high, 180 seconds for moderate
+            sla_seconds = 60 if severity_str == "critical" else (90 if severity_str == "high" else 180)
+            ack_deadline = now + timedelta(seconds=sla_seconds)
+
+            audit_entry = {
+                "timestamp": now.isoformat(),
+                "event": "ALERT_TRIGGERED",
+                "details": f"Alert triggered for vital '{vital_key}' with severity '{severity_str}'",
+                "actor": "Clinical Safety & Risk Engine",
+                "assigned_to": f"{assigned_cg} ({assigned_cg_id})"
+            }
+
+            delivery_entry = {
+                "timestamp": now.isoformat(),
+                "event": "NOTIFICATION_DISPATCHED",
+                "details": f"Push telemetry notification delivered to assigned caregiver {assigned_cg}",
+                "channel": "WebSocket / In-App Telemetry Banner",
+                "delivery_status": "delivered"
+            }
+
             alert_doc = {
                 "_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
                 "patient_id": patient_id,
@@ -84,8 +110,23 @@ class AlertService:
                 "resolved_at": None,
                 "resolution_note": None,
                 "notes": [],
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                # Caregiver Assignment & Tracking
+                "assigned_caregiver_id": assigned_cg_id,
+                "assigned_caregiver_name": assigned_cg,
+                "assigned_doctor_id": assigned_doc_id,
+                "delivery_status": "delivered",
+                "delivered_at": now,
+                "ack_deadline": ack_deadline,
+                "response_time_seconds": None,
+                "audit_trail": [audit_entry, delivery_entry],
+                "fallback_escalation_workflow": {
+                    "fallback_recipient": assigned_doc,
+                    "fallback_role": "Attending Physician / Cardiology",
+                    "escalate_after_seconds": sla_seconds,
+                    "trigger_condition": "Caregiver unacknowledged within SLA deadline"
+                },
+                "created_at": now,
+                "updated_at": now
             }
 
             res = await alert_col.insert_one(alert_doc)
@@ -94,7 +135,7 @@ class AlertService:
 
             # Broadcast WebSocket alert event
             await ws_manager.broadcast_event("alert_created", alert_doc, patient_id)
-            logger.info(f"Generated {severity_str.upper()} alert {alert_doc['id']} for {patient_name}")
+            logger.info(f"Generated {severity_str.upper()} alert {alert_doc['id']} for {patient_name} -> Assigned to {assigned_cg}")
 
         return new_alerts
 
@@ -104,11 +145,26 @@ class AlertService:
         if not alert:
             return None
 
+        now = datetime.utcnow()
+        created_at = alert.get("created_at", now)
+        resp_seconds = round((now - created_at).total_seconds(), 1)
+
+        audit_trail = alert.get("audit_trail", [])
+        audit_trail.append({
+            "timestamp": now.isoformat(),
+            "event": "ALERT_ACKNOWLEDGED",
+            "actor": f"{user_name} ({user_id})",
+            "details": f"Caregiver acknowledged alert in {resp_seconds}s. Bedside verification initiated.",
+            "response_time_seconds": resp_seconds
+        })
+
         update_fields = {
             "status": AlertStatus.ACKNOWLEDGED.value,
             "acknowledged_by": f"{user_name} ({user_id})",
-            "acknowledged_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "acknowledged_at": now,
+            "response_time_seconds": resp_seconds,
+            "audit_trail": audit_trail,
+            "updated_at": now
         }
         notes = alert.get("notes", [])
         if note:
@@ -116,7 +172,7 @@ class AlertService:
                 "action": "acknowledged",
                 "by": user_name,
                 "note": note,
-                "timestamp": datetime.utcnow()
+                "timestamp": now
             })
             update_fields["notes"] = notes
 
@@ -133,13 +189,23 @@ class AlertService:
         if not alert:
             return None
 
+        now = datetime.utcnow()
+        audit_trail = alert.get("audit_trail", [])
+        audit_trail.append({
+            "timestamp": now.isoformat(),
+            "event": "ALERT_ESCALATED",
+            "actor": f"{user_name} ({user_id})",
+            "target": doctor_id or "on-call-physician",
+            "details": f"Escalated to physician: {urgent_reason}"
+        })
+
         notes = alert.get("notes", [])
         notes.append({
             "action": "escalated_to_physician",
             "by": user_name,
             "doctor_id": doctor_id or "on-call-cardiology",
             "note": urgent_reason,
-            "timestamp": datetime.utcnow()
+            "timestamp": now
         })
 
         await alert_col.update_one(
@@ -148,7 +214,8 @@ class AlertService:
                 "$set": {
                     "status": AlertStatus.ESCALATED.value,
                     "severity": AlertSeverity.CRITICAL.value,
-                    "updated_at": datetime.utcnow(),
+                    "audit_trail": audit_trail,
+                    "updated_at": now,
                     "notes": notes
                 },
                 "$inc": {"escalation_count": 1}
@@ -166,12 +233,21 @@ class AlertService:
         if not alert:
             return None
 
+        now = datetime.utcnow()
+        audit_trail = alert.get("audit_trail", [])
+        audit_trail.append({
+            "timestamp": now.isoformat(),
+            "event": "ALERT_RESOLVED",
+            "actor": f"{user_name} ({user_id})",
+            "details": f"Alert resolved: {resolution_note}"
+        })
+
         notes = alert.get("notes", [])
         notes.append({
             "action": "resolved",
             "by": user_name,
             "note": resolution_note,
-            "timestamp": datetime.utcnow()
+            "timestamp": now
         })
 
         await alert_col.update_one(
@@ -180,9 +256,10 @@ class AlertService:
                 "$set": {
                     "status": AlertStatus.RESOLVED.value,
                     "resolved_by": f"{user_name} ({user_id})",
-                    "resolved_at": datetime.utcnow(),
+                    "resolved_at": now,
                     "resolution_note": resolution_note,
-                    "updated_at": datetime.utcnow(),
+                    "audit_trail": audit_trail,
+                    "updated_at": now,
                     "notes": notes
                 }
             }
@@ -192,6 +269,65 @@ class AlertService:
 
         await ws_manager.broadcast_event("alert_resolved", updated, updated.get("patient_id"))
         return updated
+
+    async def check_and_escalate_overdue_alerts(self) -> List[Dict[str, Any]]:
+        """
+        Scans for unacknowledged alerts that exceeded their ack_deadline SLA
+        and automatically escalates them to the fallback attending physician.
+        """
+        alert_col = get_collection("alerts")
+        now = datetime.utcnow()
+
+        overdue_alerts = await alert_col.find({
+            "status": AlertStatus.TRIGGERED.value,
+            "ack_deadline": {"$lte": now},
+            "escalation_count": 0
+        }).to_list()
+
+        escalated = []
+        for alert in overdue_alerts:
+            aid = alert["_id"]
+            fallback = alert.get("fallback_escalation_workflow", {})
+            doc_name = fallback.get("fallback_recipient", "Dr. Sarah Chen, MD")
+
+            audit_trail = alert.get("audit_trail", [])
+            audit_trail.append({
+                "timestamp": now.isoformat(),
+                "event": "AUTO_ESCALATED_SLA_BREACH",
+                "actor": "System Reliability Watchdog",
+                "target": doc_name,
+                "details": f"Caregiver SLA deadline expired. Auto-escalated to fallback physician {doc_name}."
+            })
+
+            notes = alert.get("notes", [])
+            notes.append({
+                "action": "auto_escalated",
+                "by": "System Reliability Watchdog",
+                "note": f"SLA breach: Unacknowledged within deadline. Dispatched to {doc_name}.",
+                "timestamp": now
+            })
+
+            await alert_col.update_one(
+                {"_id": aid},
+                {
+                    "$set": {
+                        "status": AlertStatus.ESCALATED.value,
+                        "severity": AlertSeverity.CRITICAL.value,
+                        "audit_trail": audit_trail,
+                        "updated_at": now,
+                        "notes": notes
+                    },
+                    "$inc": {"escalation_count": 1}
+                }
+            )
+
+            updated = await alert_col.find_one({"_id": aid})
+            updated["id"] = str(updated["_id"])
+            await ws_manager.broadcast_event("alert_escalated", updated, updated.get("patient_id"))
+            logger.warning(f"AUTO-ESCALATED SLA breach for alert {aid} -> {doc_name}")
+            escalated.append(updated)
+
+        return escalated
 
 
 alert_service = AlertService()

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { patientAPI, riskAPI } from '../api/client';
+import { patientAPI, riskAPI, contextualAPI } from '../api/client';
 import { useWebSocket } from '../context/WebSocketContext';
 import AlertBadge from '../components/AlertBadge';
 import {
@@ -12,13 +12,18 @@ import {
   Activity,
   Layers,
   ChevronRight,
-  Info
+  Info,
+  Clock,
+  HeartPulse,
+  BrainCircuit,
+  FileText
 } from 'lucide-react';
 
 export default function AIRiskAnalysis() {
   const [patients, setPatients] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState('PT-1002');
   const [riskData, setRiskData] = useState(null);
+  const [contextData, setContextData] = useState(null);
   const [explanation, setExplanation] = useState(null);
   const [userQuery, setUserQuery] = useState('');
   const [loadingExpl, setLoadingExpl] = useState(false);
@@ -36,10 +41,14 @@ export default function AIRiskAnalysis() {
     load();
   }, []);
 
-  const loadRisk = async (pid) => {
+  const loadRiskAndContext = async (pid) => {
     try {
-      const res = await riskAPI.getLatest(pid);
-      setRiskData(res.data);
+      const [rRes, cRes] = await Promise.all([
+        riskAPI.getLatest(pid),
+        contextualAPI.getContext(pid)
+      ]);
+      setRiskData(rRes.data);
+      setContextData(cRes.data);
     } catch {
       // fallback
     }
@@ -47,7 +56,7 @@ export default function AIRiskAnalysis() {
 
   useEffect(() => {
     if (selectedPatientId) {
-      loadRisk(selectedPatientId);
+      loadRiskAndContext(selectedPatientId);
       setExplanation(null);
     }
   }, [selectedPatientId]);
@@ -195,6 +204,86 @@ export default function AIRiskAnalysis() {
             <div className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">
               <strong>Escalation:</strong> {currentRisk.recommended_escalation || 'Routine telemetry monitoring'}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contextual Intelligence & Contributing Factors Breakdown */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <BrainCircuit className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900">
+                Contextual Intelligence & Contributing Risk Factors
+              </h2>
+              <p className="text-xs text-slate-500">
+                Fuses real-time vitals, medical history, caregiver observations & repeated abnormal patterns
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full">
+            Context Engine v2.4 Active
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Repeated Pattern Detection */}
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              Repeated Abnormal Pattern Detection
+            </span>
+            {contextData?.repeated_patterns?.length > 0 ? (
+              <div className="space-y-1.5">
+                {contextData.repeated_patterns.map((pat, idx) => (
+                  <div key={idx} className="p-2 bg-amber-50 text-amber-900 border border-amber-200 rounded-lg text-xs font-medium">
+                    <span className="font-bold">{pat.pattern_type.replace(/_/g, ' ')}:</span> {pat.description}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">No repeated cyclic desaturations or tachycardia clustering detected.</p>
+            )}
+          </div>
+
+          {/* Chronic Condition Modifiers */}
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              Medical History Vulnerability Modifiers
+            </span>
+            {contextData?.chronic_modifiers?.length > 0 ? (
+              <div className="space-y-1.5">
+                {contextData.chronic_modifiers.map((mod, idx) => (
+                  <div key={idx} className="p-2 bg-purple-50 text-purple-900 border border-purple-200 rounded-lg text-xs font-medium flex justify-between">
+                    <span className="capitalize">{mod.condition}</span>
+                    <span className="font-bold font-mono">+{mod.vulnerability_weight}pts</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">No high-risk comorbid vulnerability escalators active.</p>
+            )}
+          </div>
+
+          {/* Contributing Feature Weights */}
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              Decision Contributing Factors Breakdown
+            </span>
+            {contextData?.contributing_factors ? (
+              <div className="space-y-1 text-xs">
+                {Object.entries(contextData.contributing_factors).map(([k, v]) => (
+                  <div key={k} className="flex justify-between items-center py-0.5 border-b border-slate-100 last:border-none">
+                    <span className="text-slate-600 capitalize">{k.replace(/_/g, ' ')}:</span>
+                    <span className="font-mono font-bold text-slate-800">{Math.round(v * 100)}%</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">Standard vital variance baseline weighting.</p>
+            )}
           </div>
         </div>
       </div>

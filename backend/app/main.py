@@ -31,6 +31,9 @@ from app.api.devices import router as devices_router
 from app.api.simulator import router as simulator_router
 from app.api.medications import router as medications_router
 from app.api.analytics import router as analytics_router
+from app.api.attendance import router as attendance_router
+from app.api.reliability import router as reliability_router
+from app.api.forecasts import router as forecasts_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -90,6 +93,9 @@ app.include_router(devices_router)
 app.include_router(simulator_router)
 app.include_router(medications_router)
 app.include_router(analytics_router)
+app.include_router(attendance_router)
+app.include_router(reliability_router)
+app.include_router(forecasts_router)
 
 @app.get("/")
 async def root():

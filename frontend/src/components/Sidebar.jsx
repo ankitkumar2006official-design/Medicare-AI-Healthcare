@@ -15,7 +15,11 @@ import {
   Radio,
   BarChart3,
   Settings,
-  ShieldAlert
+  ShieldAlert,
+  Compass,
+  Zap,
+  HardDrive,
+  TrendingUp
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -33,6 +37,10 @@ export default function Sidebar() {
     { to: '/patients', label: 'Patient Directory', icon: Users },
     { to: '/ai-risk', label: 'AI Risk Engine', icon: Cpu },
     { to: '/alerts', label: 'Alert Management', icon: AlertOctagon },
+    { to: '/forecasts', label: 'Predictive Forecasting', icon: TrendingUp },
+    { to: '/attendance', label: 'Caregiver Attendance', icon: Compass },
+    { to: '/caregiver-performance', label: 'Caregiver Performance', icon: Zap },
+    { to: '/reliability', label: 'System Reliability', icon: HardDrive },
     { to: '/caregiver-history', label: 'Caregiver Response Log', icon: FileText },
     { to: '/medications', label: 'Medications & Reminders', icon: Pill },
     { to: '/devices', label: 'Telemetry Devices', icon: Radio },

@@ -187,8 +187,9 @@ async def add_patient_note(
         "author_id": current_user["id"],
         "author_name": current_user.get("full_name", "Clinician"),
         "author_role": current_user.get("role", "doctor"),
-        "category": note_in.category,
-        "content": note_in.content,
+        "category": note_in.category or "Progress Note",
+        "content": note_in.content or note_in.note or "Clinical observation recorded.",
+        "note": note_in.content or note_in.note or "Clinical observation recorded.",
         "timestamp": datetime.utcnow()
     }
     await notes_col.insert_one(doc)

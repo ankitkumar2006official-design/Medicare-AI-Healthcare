@@ -132,6 +132,25 @@ class SensorEngineManager:
         self.patient_states: Dict[str, PatientSimulatorState] = {}
         self._task: Optional[asyncio.Task] = None
         self._ingestion_callback: Optional[Callable] = None
+        # System Reliability Simulation: Offline Buffering & Sequence Tracking
+        self.offline_mode: Dict[str, bool] = {}
+        self.offline_buffers: Dict[str, List[Dict[str, Any]]] = {}
+        self.sequence_counters: Dict[str, int] = {}
+
+    def set_offline_mode(self, patient_id: str, offline: bool):
+        self.offline_mode[patient_id] = offline
+        if offline and patient_id not in self.offline_buffers:
+            self.offline_buffers[patient_id] = []
+        logger.info(f"Sensor Simulator: Patient {patient_id} offline buffering mode set to {offline}")
+
+    def get_offline_buffer(self, patient_id: str) -> List[Dict[str, Any]]:
+        return copy.deepcopy(self.offline_buffers.get(patient_id, []))
+
+    def flush_offline_buffer(self, patient_id: str) -> List[Dict[str, Any]]:
+        self.offline_mode[patient_id] = False
+        buffered = self.offline_buffers.pop(patient_id, [])
+        logger.info(f"Sensor Simulator: Flushed {len(buffered)} buffered packets for {patient_id}")
+        return buffered
 
     def initialize_patients(self, patient_ids: List[str]):
         default_scenarios = {
@@ -188,11 +207,20 @@ class SensorEngineManager:
             try:
                 for patient_id, state in list(self.patient_states.items()):
                     packet = state.step()
-                    if self._ingestion_callback:
-                        try:
-                            await self._ingestion_callback(packet)
-                        except Exception as e:
-                            logger.error(f"Error in sensor ingestion callback for {patient_id}: {e}")
+                    seq = self.sequence_counters.get(patient_id, 1000) + 1
+                    self.sequence_counters[patient_id] = seq
+                    packet["client_sequence_id"] = f"{patient_id}-SEQ-{seq}"
+
+                    if self.offline_mode.get(patient_id, False):
+                        if patient_id not in self.offline_buffers:
+                            self.offline_buffers[patient_id] = []
+                        self.offline_buffers[patient_id].append(packet)
+                    else:
+                        if self._ingestion_callback:
+                            try:
+                                await self._ingestion_callback(packet)
+                            except Exception as e:
+                                logger.error(f"Error in sensor ingestion callback for {patient_id}: {e}")
                 await asyncio.sleep(self.interval_seconds)
             except asyncio.CancelledError:
                 break

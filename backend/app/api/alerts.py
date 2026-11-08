@@ -109,3 +109,40 @@ async def resolve_alert(
     await log_audit_event(current_user["id"], "alert_resolved", "alerts", alert_id, {"resolution": req.resolution_note})
     return AlertResponse(**updated)
 
+@router.post("/check-escalations", status_code=status.HTTP_200_OK)
+async def trigger_escalation_check(
+    current_user: dict = Depends(require_roles([UserRole.ADMIN, UserRole.DOCTOR, UserRole.CAREGIVER]))
+):
+    """
+    Evaluates all active alerts against their SLA deadline timers.
+    Automatically escalates overdue alerts to the on-call attending physician.
+    """
+    escalated = await alert_service.check_and_escalate_overdue_alerts()
+    return {
+        "status": "success",
+        "evaluated_at": datetime.utcnow().isoformat(),
+        "escalated_count": len(escalated),
+        "escalated_alerts": [a.get("id") or a.get("_id") for a in escalated]
+    }
+
+@router.get("/{alert_id}/audit-trail")
+async def get_alert_audit_trail(
+    alert_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    alert_col = get_collection("alerts")
+    alert = await alert_col.find_one({"_id": alert_id})
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found.")
+    return {
+        "alert_id": alert_id,
+        "patient_id": alert.get("patient_id"),
+        "patient_name": alert.get("patient_name"),
+        "delivery_status": alert.get("delivery_status", "delivered"),
+        "ack_deadline": alert.get("ack_deadline"),
+        "response_time_seconds": alert.get("response_time_seconds"),
+        "audit_trail": alert.get("audit_trail", []),
+        "fallback_escalation_workflow": alert.get("fallback_escalation_workflow")
+    }
+
+

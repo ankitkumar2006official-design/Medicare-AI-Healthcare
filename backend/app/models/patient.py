@@ -19,7 +19,8 @@ class BaselineVitals(BaseModel):
 
 class ClinicalNoteCreate(BaseModel):
     category: str = "Progress Note"
-    content: str
+    content: Optional[str] = None
+    note: Optional[str] = None
 
 class ClinicalNote(BaseModel):
     id: str
@@ -29,6 +30,7 @@ class ClinicalNote(BaseModel):
     author_role: str = "doctor"
     category: str = "Progress Note"
     content: str
+    note: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 class PatientBase(BaseModel):

@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: mediguard-backend
+    env: python
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "python -u backend/run.py"
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      - key: ENVIRONMENT
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: mediguard_db
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "http://localhost:5173,https://*.vercel.app"

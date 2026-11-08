@@ -352,5 +352,118 @@ async def seed_initial_data():
             m_doc["updated_at"] = datetime.utcnow()
             await med_col.insert_one(m_doc)
 
+    # 5. Seed Caregiver Attendance and Activity
+    att_col = get_collection("caregiver_attendance")
+    act_col = get_collection("caregiver_activity")
+    att_count = await att_col.count_documents({})
+    if att_count == 0:
+        now = datetime.utcnow()
+        att_docs = [
+            {
+                "_id": "att-seed-01",
+                "id": "att-seed-01",
+                "caregiver_id": "user-caregiver-01",
+                "caregiver_name": "James Wilson, RN",
+                "patient_id": "PT-1001",
+                "patient_name": "Eleanor Vance",
+                "shift_type": "day",
+                "status": "checked_in",
+                "check_in_time": now - timedelta(hours=3, minutes=15),
+                "check_out_time": None,
+                "duration_minutes": 195,
+                "check_in_location": {
+                    "latitude": 37.7749,
+                    "longitude": -122.4194,
+                    "accuracy_meters": 4.5,
+                    "address_label": "Ward Zero Resident Bedroom 101, San Francisco, CA",
+                    "within_geofence": True
+                },
+                "check_out_location": None,
+                "scheduled_check_in": now - timedelta(hours=3, minutes=30),
+                "is_missed_or_late": False,
+                "notes": "Morning vitals verification and telemetry sensor lead placement completed.",
+                "created_at": now - timedelta(hours=3, minutes=15)
+            },
+            {
+                "_id": "att-seed-02",
+                "id": "att-seed-02",
+                "caregiver_id": "user-caregiver-01",
+                "caregiver_name": "James Wilson, RN",
+                "patient_id": "PT-1002",
+                "patient_name": "Marcus Rodriguez",
+                "shift_type": "night",
+                "status": "checked_out",
+                "check_in_time": now - timedelta(hours=27),
+                "check_out_time": now - timedelta(hours=19),
+                "duration_minutes": 480,
+                "check_in_location": {
+                    "latitude": 37.7750,
+                    "longitude": -122.4190,
+                    "accuracy_meters": 3.8,
+                    "address_label": "Ward Zero Resident Room 102, San Francisco, CA",
+                    "within_geofence": True
+                },
+                "check_out_location": {
+                    "latitude": 37.7751,
+                    "longitude": -122.4192,
+                    "accuracy_meters": 5.1,
+                    "address_label": "Ward Zero Resident Room 102, San Francisco, CA",
+                    "within_geofence": True
+                },
+                "scheduled_check_in": now - timedelta(hours=27),
+                "is_missed_or_late": False,
+                "notes": "Night shift telemetry observation logged without incident.",
+                "created_at": now - timedelta(hours=27)
+            }
+        ]
+        for a in att_docs:
+            await att_col.insert_one(a)
+        logger.info("Seeded initial caregiver attendance records.")
+
+    act_count = await act_col.count_documents({})
+    if act_count == 0:
+        now = datetime.utcnow()
+        act_docs = [
+            {
+                "_id": "act-seed-01",
+                "id": "act-seed-01",
+                "caregiver_id": "user-caregiver-01",
+                "caregiver_name": "James Wilson, RN",
+                "patient_id": "PT-1001",
+                "patient_name": "Eleanor Vance",
+                "activity_type": "bedside_visit",
+                "description": "Routine vital sign auscultation & SpO2 sensor calibration",
+                "timestamp": now - timedelta(minutes=45),
+                "metadata": {"bp_manual": "122/82", "spo2_verified": 98}
+            },
+            {
+                "_id": "act-seed-02",
+                "id": "act-seed-02",
+                "caregiver_id": "user-caregiver-01",
+                "caregiver_name": "James Wilson, RN",
+                "patient_id": "PT-1002",
+                "patient_name": "Marcus Rodriguez",
+                "activity_type": "alert_acknowledged",
+                "description": "Rapid triage bedside response for telemetry hypoxia trigger",
+                "timestamp": now - timedelta(hours=1, minutes=10),
+                "metadata": {"alert_id": "ALT-DEMO-01", "response_time_seconds": 32}
+            },
+            {
+                "_id": "act-seed-03",
+                "id": "act-seed-03",
+                "caregiver_id": "user-caregiver-01",
+                "caregiver_name": "James Wilson, RN",
+                "patient_id": "PT-1001",
+                "patient_name": "Eleanor Vance",
+                "activity_type": "medication_administered",
+                "description": "Administered scheduled morning dose of Lisinopril 10mg PO",
+                "timestamp": now - timedelta(hours=2, minutes=30),
+                "metadata": {"medication": "Lisinopril", "dosage": "10mg"}
+            }
+        ]
+        for act in act_docs:
+            await act_col.insert_one(act)
+        logger.info("Seeded initial caregiver activity log entries.")
+
     logger.info("Demo dataset verification and seeding complete.")
 

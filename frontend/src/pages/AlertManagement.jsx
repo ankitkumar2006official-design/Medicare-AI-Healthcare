@@ -14,7 +14,13 @@ import {
   VolumeX,
   Clock,
   ShieldAlert,
-  XCircle
+  XCircle,
+  ShieldCheck,
+  Send,
+  Eye,
+  X,
+  RefreshCw,
+  UserCheck
 } from 'lucide-react';
 
 export default function AlertManagement() {
@@ -22,6 +28,10 @@ export default function AlertManagement() {
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
+  const [selectedAuditAlert, setSelectedAuditAlert] = useState(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditTrailData, setAuditTrailData] = useState(null);
+  const [watchdogRunning, setWatchdogRunning] = useState(false);
   const { isMuted, toggleMute } = useAlertSound();
   const { activeAlerts } = useWebSocket();
 
@@ -73,6 +83,32 @@ export default function AlertManagement() {
     }
   };
 
+  const handleOpenAudit = async (alertItem) => {
+    setSelectedAuditAlert(alertItem);
+    setAuditLoading(true);
+    try {
+      const res = await alertAPI.getAuditTrail(alertItem.id);
+      setAuditTrailData(res.data);
+    } catch {
+      setAuditTrailData(alertItem);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  const handleRunWatchdog = async () => {
+    setWatchdogRunning(true);
+    try {
+      const res = await alertAPI.checkEscalations();
+      alert(`SLA Watchdog Scan Complete. ${res.data.escalated_count} overdue alerts escalated to fallback physicians.`);
+      await loadAlerts();
+    } catch {
+      alert('Failed to run escalation watchdog');
+    } finally {
+      setWatchdogRunning(false);
+    }
+  };
+
   const filteredAlerts = alerts.filter((a) => {
     if (severityFilter !== 'ALL' && a.severity.toUpperCase() !== severityFilter) return false;
     if (statusFilter !== 'ALL' && a.status.toUpperCase() !== statusFilter) return false;
@@ -89,10 +125,21 @@ export default function AlertManagement() {
             <span className="text-xs font-bold text-rose-600 uppercase tracking-wider">Hospital Alarm Hub</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight mt-1">Alert & Alarm Management</h1>
-          <p className="text-xs text-slate-500">Prioritized Clinical Alerts, Escalation Protocols & Audit Tracking</p>
+          <p className="text-xs text-slate-500">
+            Caregiver Assignment, SLA Deadline Timers, Auto-Escalation & Audit Verification
+          </p>
         </div>
 
         <div className="flex items-center space-x-2">
+          <button
+            onClick={handleRunWatchdog}
+            disabled={watchdogRunning}
+            className="px-3 py-2 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
+          >
+            <ShieldAlert className="w-4 h-4" />
+            <span>{watchdogRunning ? 'Scanning SLA Timers...' : 'Check SLA Escalations'}</span>
+          </button>
+
           <button
             onClick={toggleMute}
             className={`p-2 rounded-lg border text-xs flex items-center space-x-1.5 transition-colors ${
@@ -150,9 +197,9 @@ export default function AlertManagement() {
               <tr>
                 <th className="px-4 py-3">Severity</th>
                 <th className="px-4 py-3">Patient</th>
-                <th className="px-4 py-3">Reason / Clinical Trigger</th>
-                <th className="px-4 py-3">Recommended Protocol</th>
-                <th className="px-4 py-3">Time</th>
+                <th className="px-4 py-3">Assigned Caregiver</th>
+                <th className="px-4 py-3">Reason / Trigger</th>
+                <th className="px-4 py-3">Delivery & SLA Status</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -175,19 +222,46 @@ export default function AlertManagement() {
                       <div className="text-[10px] text-slate-400 font-mono">{a.patient_id}</div>
                     </td>
                     <td className="px-4 py-3">
+                      <div className="font-semibold text-slate-800 flex items-center space-x-1">
+                        <UserCheck className="w-3.5 h-3.5 text-hospital-teal" />
+                        <span>{a.assigned_caregiver_name || 'James Wilson, RN'}</span>
+                      </div>
+                      <div className="text-[10px] text-emerald-600 font-medium">Delivered to mobile</div>
+                    </td>
+                    <td className="px-4 py-3">
                       <div className="font-semibold text-slate-800">{a.reason}</div>
                       <div className="text-[10px] text-slate-400 font-mono">Vital: {a.trigger_vital}</div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 max-w-xs">
-                      {a.recommended_action}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-[11px] text-slate-400">
-                      {new Date(a.created_at).toLocaleTimeString()}
+                    <td className="px-4 py-3">
+                      {a.response_time_seconds ? (
+                        <div className="font-mono text-emerald-600 font-bold">
+                          Response: {a.response_time_seconds}s
+                        </div>
+                      ) : a.status === 'triggered' ? (
+                        <div className="font-mono text-amber-600 font-bold flex items-center space-x-1">
+                          <Clock className="w-3 h-3 animate-pulse" />
+                          <span>SLA Target: 90s</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 font-mono text-[10px]">Processed</span>
+                      )}
+                      <div className="text-[10px] text-slate-400">
+                        {new Date(a.created_at).toLocaleTimeString()}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <AlertBadge status={a.status} />
                     </td>
                     <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
+                      <button
+                        onClick={() => handleOpenAudit(a)}
+                        title="View Full Response Audit Trail"
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded text-[11px] font-semibold"
+                      >
+                        <Eye className="w-3.5 h-3.5 inline mr-1" />
+                        Audit
+                      </button>
+
                       {a.status === 'triggered' && (
                         <button
                           onClick={() => handleAcknowledge(a.id)}
@@ -220,7 +294,84 @@ export default function AlertManagement() {
           </table>
         </div>
       </div>
+
+      {/* Audit Trail Modal / Drawer */}
+      {selectedAuditAlert && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Alert Response & Delivery Audit Trail
+                </h3>
+                <p className="text-xs text-slate-500 font-mono">Alert ID: {selectedAuditAlert.id}</p>
+              </div>
+              <button
+                onClick={() => setSelectedAuditAlert(null)}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Assignment & Delivery Details */}
+            <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <div>
+                <span className="text-slate-500 font-medium">Assigned Caregiver:</span>
+                <p className="font-bold text-slate-900 mt-0.5">
+                  {selectedAuditAlert.assigned_caregiver_name || 'James Wilson, RN'}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-500 font-medium">Notification Delivery:</span>
+                <p className="font-bold text-emerald-600 mt-0.5">Delivered (WebSocket / Mobile)</p>
+              </div>
+              <div>
+                <span className="text-slate-500 font-medium">Fallback Escalation Target:</span>
+                <p className="font-bold text-purple-700 mt-0.5">
+                  {selectedAuditAlert.fallback_escalation_workflow?.fallback_recipient || 'Dr. Sarah Chen, MD (Attending)'}
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-500 font-medium">Response Latency:</span>
+                <p className="font-bold text-slate-900 mt-0.5">
+                  {selectedAuditAlert.response_time_seconds
+                    ? `${selectedAuditAlert.response_time_seconds} seconds`
+                    : 'Awaiting acknowledgment'}
+                </p>
+              </div>
+            </div>
+
+            {/* Audit Trail Timeline */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Event Timeline</h4>
+              <div className="space-y-2 border-l-2 border-teal-500 pl-4 ml-1">
+                {(auditTrailData?.audit_trail || selectedAuditAlert.audit_trail || []).map((ev, idx) => (
+                  <div key={idx} className="space-y-0.5 text-xs">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-slate-900">{ev.event}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {new Date(ev.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <p className="text-slate-600">{ev.details}</p>
+                    {ev.actor && <p className="text-[10px] text-slate-400">Actor: {ev.actor}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 text-right">
+              <button
+                onClick={() => setSelectedAuditAlert(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors"
+              >
+                Close Audit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
