@@ -2,6 +2,16 @@
 > **Transforming Ordinary Patient Bedrooms into Simulated Smart Hospital Wards**  
 > *SENSE &rarr; UNDERSTAND &rarr; PREDICT &rarr; ALERT &rarr; RESPOND*
 
+[![Live Prototype](https://img.shields.io/badge/Live%20Demo-Vercel%20Production-0ea5e9?style=for-the-badge&logo=vercel&logoColor=white)](https://frontend-fawn-eight-96.vercel.app/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/badge/Tests-19%2F19%20Passed%20(100%25)-emerald?style=for-the-badge&logo=pytest)](test_upgrades.py)
+[![Backend: FastAPI](https://img.shields.io/badge/Backend-FastAPI%200.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Frontend: React](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+
+🏥 **Live Production Application**: [https://frontend-fawn-eight-96.vercel.app/](https://frontend-fawn-eight-96.vercel.app/)  
+⚡ **Instant Demo Access**: 1-click passwordless login on the top banner as **Doctor**, **Caregiver**, **Admin**, or **Patient**.  
+🎬 **Judges' 5-Minute Walkthrough**: [Read the Interactive Hackathon Demonstration Script](HACKATHON_DEMO_GUIDE.md)
+
 ---
 
 ## 1. Executive Summary & Problem Statement

@@ -1,5 +1,6 @@
 # MediGuard AI – Operation Ward Zero: Hackathon Demo Guide
-> **Interactive 5-Minute Demonstration Script for Judges and Reviewers**
+> **Interactive 5-Minute Demonstration Script for Judges and Reviewers**  
+> 🌐 **Live Deployed Prototype**: [https://frontend-fawn-eight-96.vercel.app/](https://frontend-fawn-eight-96.vercel.app/)
 
 ---
 
@@ -10,7 +11,7 @@ This step-by-step walkthrough demonstrates how **MediGuard AI** transforms an or
 ---
 
 ### Step 1: Landing Page & Instant Role-Switching
-1. Open `http://localhost:5173/` in your browser.
+1. Open the live app at **[https://frontend-fawn-eight-96.vercel.app/](https://frontend-fawn-eight-96.vercel.app/)** (or `http://localhost:5173/` locally).
 2. Note the clean, hospital-grade interface with the core **SENSE &rarr; RESPOND** architecture diagram.
 3. Click **"Sign In as Caregiver"** on the top demo banner or quick card.
 4. You are immediately logged in as **James Wilson, RN (Lead Caregiver)** with full JWT authorization.
