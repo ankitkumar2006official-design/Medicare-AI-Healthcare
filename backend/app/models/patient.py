@@ -17,6 +17,20 @@ class BaselineVitals(BaseModel):
     glucose_min: float = 70.0
     glucose_max: float = 140.0
 
+class ClinicalNoteCreate(BaseModel):
+    category: str = "Progress Note"
+    content: str
+
+class ClinicalNote(BaseModel):
+    id: str
+    patient_id: str
+    author_id: str
+    author_name: str
+    author_role: str = "doctor"
+    category: str = "Progress Note"
+    content: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
 class PatientBase(BaseModel):
     patient_id: str
     full_name: str
@@ -60,4 +74,3 @@ class PatientResponse(PatientBase):
     latest_vitals: Optional[Dict[str, Any]] = None
     latest_risk: Optional[Dict[str, Any]] = None
     active_alerts_count: int = 0
-

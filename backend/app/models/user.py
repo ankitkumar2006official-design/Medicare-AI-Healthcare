@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from app.models import UserRole
 
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
     full_name: str
     role: UserRole
     phone: Optional[str] = None
@@ -15,7 +15,7 @@ class UserCreate(UserBase):
     password: str
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class UserUpdate(BaseModel):
@@ -26,7 +26,7 @@ class UserUpdate(BaseModel):
     assigned_patient_ids: Optional[list[str]] = None
 
 class PasswordReset(BaseModel):
-    email: EmailStr
+    email: str
     new_password: str
 
 class UserResponse(UserBase):

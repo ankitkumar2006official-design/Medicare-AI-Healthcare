@@ -51,8 +51,27 @@ export const AuthProvider = ({ children }) => {
 
   const switchDemoRole = async (roleKey) => {
     const cred = DEMO_CREDENTIALS.find((c) => c.role === roleKey);
-    if (cred) {
+    if (!cred) return;
+    try {
       return await login(cred.email, cred.password);
+    } catch (err) {
+      console.warn('Backend login unreachable, activating offline demo session:', err);
+      // Demo session fallback so user is NEVER blocked from clicking and viewing the dashboard
+      const demoUser = {
+        id: `demo-${roleKey}-01`,
+        email: cred.email,
+        full_name: cred.title,
+        role: cred.role,
+        assigned_patient_ids: ['PT-1001', 'PT-1002', 'PT-1003', 'PT-1004', 'PT-1005'],
+        is_active: true,
+      };
+      // Simulated demo JWT token
+      const demoToken = btoa(JSON.stringify({ sub: demoUser.id, role: demoUser.role, email: demoUser.email }));
+      localStorage.setItem('mediguard_token', demoToken);
+      localStorage.setItem('mediguard_user', JSON.stringify(demoUser));
+      setToken(demoToken);
+      setUser(demoUser);
+      return demoUser;
     }
   };
 

@@ -16,15 +16,23 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage({ onOpenSimulator }) {
+  const [loggingInRole, setLoggingInRole] = useState(null);
   const { switchDemoRole } = useAuth();
   const navigate = useNavigate();
 
   const handleQuickLogin = async (roleKey) => {
-    await switchDemoRole(roleKey);
-    if (roleKey === 'admin') navigate('/dashboard/admin');
-    else if (roleKey === 'doctor') navigate('/dashboard/doctor');
-    else if (roleKey === 'caregiver') navigate('/dashboard/caregiver');
-    else navigate('/dashboard/patient');
+    setLoggingInRole(roleKey);
+    try {
+      await switchDemoRole(roleKey);
+      if (roleKey === 'admin') navigate('/dashboard/admin');
+      else if (roleKey === 'doctor') navigate('/dashboard/doctor');
+      else if (roleKey === 'caregiver') navigate('/dashboard/caregiver');
+      else navigate('/dashboard/patient');
+    } catch (err) {
+      console.error('Quick login error:', err);
+    } finally {
+      setLoggingInRole(null);
+    }
   };
 
   return (
@@ -126,11 +134,19 @@ export default function LandingPage({ onOpenSimulator }) {
                 </div>
 
                 <button
+                  type="button"
+                  disabled={loggingInRole !== null}
                   onClick={() => handleQuickLogin(cred.role)}
-                  className="mt-4 w-full bg-white hover:bg-hospital-teal hover:text-white border border-slate-300 hover:border-hospital-teal text-slate-700 font-semibold py-1.5 px-3 rounded-lg text-xs shadow-sm transition-colors flex items-center justify-center space-x-1"
+                  className="mt-4 w-full bg-white hover:bg-hospital-teal hover:text-white border border-slate-300 hover:border-hospital-teal text-slate-700 font-semibold py-2 px-3 rounded-lg text-xs shadow-sm transition-colors flex items-center justify-center space-x-1 cursor-pointer disabled:opacity-50"
                 >
-                  <span>Sign in as {cred.role}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  {loggingInRole === cred.role ? (
+                    <span>Entering {cred.role}...</span>
+                  ) : (
+                    <>
+                      <span>Sign in as {cred.role}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
                 </button>
               </div>
             ))}

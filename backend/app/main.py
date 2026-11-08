@@ -1,7 +1,14 @@
 import asyncio
 import logging
+import sys
+import os
 from contextlib import asynccontextmanager
 from typing import Optional
+
+# Ensure project root is on sys.path
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, status
 from fastapi.middleware.cors import CORSMiddleware
