@@ -50,7 +50,9 @@ class Settings(BaseModel):
     MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb+srv://mediguard_admin:ankit181712@cluster0.kycrhvq.mongodb.net/")
     MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "mediguard_db")
     
-    # AI / LLM
+    # AI / LLM (Groq LLaMA-3 / Gemini)
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     
     # Simulator Defaults

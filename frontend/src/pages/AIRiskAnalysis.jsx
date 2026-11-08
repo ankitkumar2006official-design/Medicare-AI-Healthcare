@@ -83,7 +83,7 @@ export default function AIRiskAnalysis() {
           3-Layer AI/ML Risk Detection Engine
         </h1>
         <p className="text-xs text-slate-500">
-          Deterministic Safety Thresholds &bull; Scikit-learn Isolation Forest Anomaly Detection &bull; Gemini Assistant
+          Deterministic Safety Thresholds &bull; Scikit-learn Isolation Forest Anomaly Detection &bull; Groq LLaMA-3 Assistant
         </p>
       </div>
 
@@ -208,10 +208,10 @@ export default function AIRiskAnalysis() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">
-                Gemini & Deterministic Clinical Assistant
+                Groq LLaMA-3 & Deterministic Clinical Assistant
               </h2>
               <p className="text-xs text-slate-500">
-                Explainable telemetry breakdown & caregiver bedside recommendations
+                Ultra-fast explainable telemetry breakdown & caregiver bedside recommendations (Groq LLaMA-3.3-70B)
               </p>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function AIRiskAnalysis() {
             className="bg-hospital-teal hover:bg-teal-700 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg text-xs flex items-center space-x-1.5 shadow-sm"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{loadingExpl ? 'Analyzing vitals...' : 'Generate Clinical Explanation'}</span>
+            <span>{loadingExpl ? 'Analyzing with Groq...' : 'Generate Clinical Explanation'}</span>
           </button>
         </div>
 
@@ -232,7 +232,7 @@ export default function AIRiskAnalysis() {
             type="text"
             value={userQuery}
             onChange={(e) => setUserQuery(e.target.value)}
-            placeholder="Ask AI assistant about this patient's vitals, trend risks, or recommended actions..."
+            placeholder="Ask Groq AI assistant about this patient's vitals, trend risks, or recommended actions..."
             className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-hospital-teal"
           />
           <button

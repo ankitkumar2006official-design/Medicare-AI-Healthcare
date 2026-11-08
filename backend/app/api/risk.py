@@ -7,7 +7,7 @@ from app.database import get_collection
 from app.auth import get_current_user, verify_patient_access
 from app.models.risk import RiskAssessmentResponse
 from app.ml.risk_scorer import risk_engine
-from app.ml.gemini_assistant import gemini_assistant
+from app.ml.groq_assistant import groq_assistant
 
 router = APIRouter(prefix="/api/risk", tags=["AI Risk Engine"])
 
@@ -99,7 +99,7 @@ async def explain_patient_risk(
     if req.alert_id:
         alert_info = await alert_col.find_one({"_id": req.alert_id})
 
-    explanation_res = await gemini_assistant.explain_vitals_and_alert(
+    explanation_res = await groq_assistant.explain_vitals_and_alert(
         patient_name=patient.get("full_name", f"Patient {patient_id}"),
         vitals=latest_vital,
         risk_data=latest_risk,
