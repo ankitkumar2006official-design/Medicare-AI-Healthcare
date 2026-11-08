@@ -24,10 +24,17 @@ export const WebSocketProvider = ({ children }) => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const hostname = window.location.hostname || 'localhost';
 
-    // In local dev, connect directly to FastAPI backend on port 8000
+    // Determine the optimal WebSocket URL:
+    // 1. If explicit VITE_WS_URL is provided, use it
+    // 2. If VITE_API_URL is provided, derive WSS URL (e.g., https://... -> wss://.../ws)
+    // 3. In local development (localhost / 127.0.0.1), connect directly to backend port 8000
+    // 4. Otherwise (deployed reverse proxy), use the host's /ws path
     let baseWsUrl = import.meta.env.VITE_WS_URL;
     if (!baseWsUrl) {
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      if (import.meta.env.VITE_API_URL) {
+        const apiUrl = import.meta.env.VITE_API_URL.replace(/^http/, 'ws');
+        baseWsUrl = `${apiUrl.replace(/\/$/, '')}/ws`;
+      } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
         baseWsUrl = `ws://${hostname}:8000/ws`;
       } else {
         baseWsUrl = `${protocol}//${window.location.host}/ws`;
