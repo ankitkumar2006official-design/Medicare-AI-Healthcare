@@ -95,33 +95,43 @@ INSTRUCTIONS:
             "Authorization": f"Bearer {self.groq_api_key}",
             "Content-Type": "application/json"
         }
-        payload = {
-            "model": self.groq_model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are MediGuard AI's Clinical Telemetry Assistant powered by Groq LLaMA-3. "
-                        "STRICT CLINICAL SAFETY RULES:\n"
-                        "1. Prioritize acute patient safety first. For Critical/High risk, emphasize immediate bedside assessment and emergency doctor escalation.\n"
-                        "2. NEVER make a definitive medical diagnosis.\n"
-                        "3. NEVER prescribe or change medications.\n"
-                        "4. Clearly explain the physiological connection between abnormal vitals (e.g. tachycardia + low SpO2 indicating cardiopulmonary stress)."
-                    )
-                },
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.2,
-            "max_tokens": 600
-        }
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
-            if resp.status_code == 200:
-                data = resp.json()
-                return data["choices"][0]["message"]["content"].strip()
-            else:
-                raise Exception(f"Groq API returned status {resp.status_code}: {resp.text}")
+        candidate_models = [self.groq_model, "openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]
+        last_error = None
+
+        async with httpx.AsyncClient(timeout=12.0) as client:
+            for model_name in candidate_models:
+                payload = {
+                    "model": model_name,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": (
+                                "You are MediGuard AI's Clinical Telemetry Assistant powered by Groq. "
+                                "STRICT CLINICAL SAFETY RULES:\n"
+                                "1. Prioritize acute patient safety first. For Critical/High risk, emphasize immediate bedside assessment and emergency doctor escalation.\n"
+                                "2. NEVER make a definitive medical diagnosis.\n"
+                                "3. NEVER prescribe or change medications.\n"
+                                "4. Clearly explain the physiological connection between abnormal vitals (e.g. tachycardia + low SpO2 indicating cardiopulmonary stress)."
+                            )
+                        },
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.2,
+                    "max_tokens": 600
+                }
+                try:
+                    resp = await client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        self.groq_model = model_name
+                        return data["choices"][0]["message"]["content"].strip()
+                    else:
+                        last_error = f"Status {resp.status_code}: {resp.text}"
+                except Exception as e:
+                    last_error = str(e)
+
+        raise Exception(f"All Groq models failed. Last error: {last_error}")
 
     async def _call_gemini_api(
         self,
@@ -225,3 +235,4 @@ Inquiry: {user_query or 'Provide clinical summary and caregiver instructions.'}
         return "\n\n".join(paragraphs)
 
 groq_assistant = GroqHealthAssistant()
+
