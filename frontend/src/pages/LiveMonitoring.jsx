@@ -29,12 +29,16 @@ export default function LiveMonitoring({ onOpenSimulator }) {
 
   const loadData = async () => {
     try {
-      const [pRes, ovRes] = await Promise.all([
+      const [pRes, ovRes] = await Promise.allSettled([
         patientAPI.getPatients(),
         analyticsAPI.getOverview(),
       ]);
-      setPatients(pRes.data);
-      setOverview(ovRes.data);
+      if (pRes.status === 'fulfilled' && Array.isArray(pRes.value.data)) {
+        setPatients(pRes.value.data);
+      }
+      if (ovRes.status === 'fulfilled' && ovRes.value.data) {
+        setOverview(ovRes.value.data);
+      }
     } catch (err) {
       console.warn('Live monitoring fetch error:', err);
     }
@@ -100,12 +104,12 @@ export default function LiveMonitoring({ onOpenSimulator }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
         {[
           { label: 'Total Beds', val: overview?.total_patients ?? patients.length, color: 'text-slate-900' },
-          { label: 'Stable', val: overview?.stable_patients ?? '--', color: 'text-emerald-600' },
-          { label: 'Warning', val: overview?.patients_requiring_attention ?? '--', color: 'text-amber-600' },
-          { label: 'Critical Alert', val: overview?.critical_simulated_alerts ?? '--', color: 'text-rose-600' },
-          { label: 'Active Sensors', val: overview?.active_sensors ?? '--', color: 'text-teal-600' },
-          { label: 'Disconnected', val: overview?.disconnected_sensors ?? '--', color: 'text-slate-500' },
-          { label: 'Unack Alerts', val: overview?.unacknowledged_alerts ?? '--', color: 'text-purple-600' },
+          { label: 'Stable', val: overview?.stable_patients ?? patients.filter(p => ((latestRisks[p.patient_id]?.risk_category || p.latest_risk?.risk_category || 'stable').toLowerCase() === 'stable')).length, color: 'text-emerald-600' },
+          { label: 'Warning', val: overview?.patients_requiring_attention ?? patients.filter(p => ['moderate', 'high'].includes((latestRisks[p.patient_id]?.risk_category || p.latest_risk?.risk_category || '').toLowerCase())).length, color: 'text-amber-600' },
+          { label: 'Critical Alert', val: overview?.critical_simulated_alerts ?? patients.filter(p => (latestRisks[p.patient_id]?.risk_category || p.latest_risk?.risk_category || '').toLowerCase() === 'critical').length, color: 'text-rose-600' },
+          { label: 'Active Sensors', val: overview?.active_sensors ?? patients.filter(p => (latestVitals[p.patient_id]?.sensor_connected !== false)).length, color: 'text-teal-600' },
+          { label: 'Disconnected', val: overview?.disconnected_sensors ?? patients.filter(p => (latestVitals[p.patient_id]?.sensor_connected === false)).length, color: 'text-slate-500' },
+          { label: 'Unack Alerts', val: overview?.unacknowledged_alerts ?? 0, color: 'text-purple-600' },
         ].map((kpi) => (
           <div key={kpi.label} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{kpi.label}</div>
